@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixa – Wie dein Feed dich kennenlernt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAEEFA; --surface:#FFFFFF; --ink:#1F2340; --muted:#5E6382; --line:#DCE0EE;
+  --chip:#F1F3FA; --like:#F0306F; --accent:#5443D9; --onaccent:#FFFFFF;
+  --bub1:rgba(94,230,224,.55); --bub2:rgba(155,123,255,.55); --bub3:rgba(255,210,63,.45);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121429; --surface:#1D2040; --ink:#EEF0FF; --muted:#A6ABCB; --line:#2F3358;
+    --chip:#272B4E; --like:#FF5A92; --accent:#9C8FFF; --onaccent:#121429; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121429; --surface:#1D2040; --ink:#EEF0FF; --muted:#A6ABCB; --line:#2F3358;
+  --chip:#272B4E; --like:#FF5A92; --accent:#9C8FFF; --onaccent:#121429; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.45}
+h1,h2,h3,.logo{font-family:"Baloo 2","Atkinson Hyperlegible",system-ui,sans-serif;line-height:1.1;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stage{display:flex;justify-content:center;align-items:flex-start;gap:28px;padding:16px 12px 32px}
+.phone{position:relative;width:100%;max-width:430px;background:var(--surface);border-radius:28px;overflow:hidden;min-height:620px;border:1px solid var(--line)}
+.phone::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;z-index:5;
+  opacity:var(--b,0);transition:opacity .8s ease;
+  background:radial-gradient(ellipse 75% 70% at 50% 48%, transparent 62%, var(--bub1) 80%, var(--bub2) 92%, var(--bub3) 100%);}
+.phone::before{content:"";position:absolute;z-index:6;pointer-events:none;width:90px;height:38px;top:70px;left:24px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,255,255,.75),transparent);transform:rotate(-30deg);opacity:calc(var(--b,0) * .9);transition:opacity .8s ease}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+.logo{font-size:30px;font-weight:800;letter-spacing:-.5px}
+.logo span{display:inline-block;width:12px;height:12px;border-radius:50%;margin-left:3px;background:conic-gradient(#5EE6E0,#9B7BFF,#FFD23F,#5EE6E0);vertical-align:2px}
+.peek{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:6px 12px;font-size:15px}
+.progress{height:4px;background:var(--chip)}
+.progress i{display:block;height:100%;width:0;background:var(--ink);transition:width .3s}
+.screen{padding:20px}
+.intro{display:flex;flex-direction:column;gap:16px;padding:36px 24px}
+.intro h1{font-size:40px}
+.intro p{margin:0}
+.small{font-size:14px;color:var(--muted)}
+.cta{border:0;background:var(--accent);color:var(--onaccent);border-radius:14px;padding:14px 18px;font-weight:700;font-size:18px;width:100%}
+.cta.ghost{background:var(--chip);color:var(--ink)}
+/* Post */
+.post header{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.ava{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:18px}
+.handle{font-weight:700;font-size:15px}
+.img{position:relative;aspect-ratio:1/1;display:grid;place-items:center;user-select:none;-webkit-user-select:none;touch-action:pan-y;overflow:hidden}
+.img .big{font-size:120px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.18))}
+.img .slogan{position:absolute;left:18px;right:18px;bottom:22px;text-align:center;font-family:"Baloo 2",sans-serif;font-weight:800;font-size:28px;line-height:1.05;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.25)}
+.img.has-slogan .big{font-size:86px;margin-bottom:60px}
+.pop{position:absolute;font-size:110px;opacity:0;transform:scale(.4);pointer-events:none}
+.pop.go{animation:pop .55s ease-out}
+@keyframes pop{30%{opacity:1;transform:scale(1.1)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 4px}
+.actions button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px;font-weight:700;font-size:17px}
+.actions .like[aria-pressed="true"]{background:var(--like);border-color:var(--like);color:#fff}
+.cap{margin:0;padding:8px 16px 18px;font-size:16px}
+.count{padding:0 16px 14px;font-size:14px;color:var(--muted)}
+/* Auswertung */
+.result h2{font-size:30px;margin-bottom:6px}
+.result h3{font-size:21px;margin:22px 0 8px}
+.result p{margin:0 0 10px}
+.meter{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:8px;margin:6px 0;font-size:15px}
+.meter .track{height:12px;background:var(--chip);border-radius:6px;overflow:hidden}
+.meter .fill{height:100%;border-radius:6px}
+.stance{background:var(--chip);border-radius:16px;padding:14px;margin-top:6px}
+.strip{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.tile{width:44px;height:44px;border-radius:9px;display:grid;place-items:center;font-size:22px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-radius:12px;overflow:hidden}
+.grid .tile{width:auto;height:auto;aspect-ratio:1/1;border-radius:0;font-size:min(7vw,30px)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.duo h3{margin:0 0 6px;font-size:18px;display:flex;align-items:center;gap:6px}
+.quote{background:var(--chip);border-radius:14px;padding:10px 12px;margin:6px 0;font-size:15px}
+.quote b{display:block;font-size:13px;color:var(--muted)}
+.qs{list-style:none;padding:0;margin:10px 0 0}
+.qs li{background:var(--chip);border-radius:16px 16px 16px 4px;padding:12px 14px;margin:8px 0}
+.stack{display:grid;gap:10px;margin-top:22px}
+/* Hinter die Kulissen */
+.panel{width:340px;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px;position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+.panel h2{font-size:24px;margin-bottom:4px}
+.panel .close{display:none}
+.chance{display:grid;grid-template-columns:130px 1fr 42px;gap:8px;align-items:center;font-size:14px;margin:5px 0}
+.chance .track{height:10px;background:var(--chip);border-radius:5px;overflow:hidden}
+.chance .fill{height:100%;transition:width .5s ease}
+.log{list-style:none;padding:0;margin:6px 0 0;font-size:14px;max-height:180px;overflow:auto}
+.log li{padding:5px 0;border-bottom:1px solid var(--line)}
+.panel h3{font-size:17px;margin:16px 0 4px}
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+summary{font-weight:700;cursor:pointer}
+details p{font-size:14px;margin:8px 0}
+@media (max-width:899px){
+  .panel{display:none;position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;max-height:78vh;overflow:auto;border-radius:22px 22px 0 0;z-index:20;
+    padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+  .panel.open{display:block}
+  .panel .close{display:block;position:absolute;right:14px;top:14px;border:0;background:var(--chip);border-radius:999px;width:36px;height:36px;font-size:18px}
+  .scrim{position:fixed;inset:0;background:rgba(10,12,30,.4);z-index:19;display:none}
+  .scrim.open{display:block}
+}
+@media (min-width:900px){.panel.hidden{display:none}.scrim{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <main class="phone" id="phone">
+    <div class="bar">
+      <div class="logo">Pixa<span aria-hidden="true"></span></div>
+      <button class="peek" id="peekBtn" aria-controls="panel" aria-expanded="false">🔍 Hinter die Kulissen</button>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+    <div id="view"></div>
+  </main>
+  <div class="scrim" id="scrim"></div>
+  <aside class="panel hidden" id="panel" aria-label="Hinter die Kulissen">
+    <button class="close" id="closeBtn" aria-label="Schliessen">✕</button>
+    <h2>Hinter die Kulissen</h2>
+    <p class="small">So entscheidet Pixa, was du als Nächstes siehst.</p>
+    <h3>Chance für den nächsten Post</h3>
+    <div id="chances"></div>
+    <h3>Wie einseitig ist dein Feed?</h3>
+    <div class="chance"><span>Blasen-Messer</span><div class="track"><div class="fill" id="bubbleFill" style="background:conic-gradient(#5EE6E0,#9B7BFF,#FFD23F)"></div></div><span id="bubbleVal">0 %</span></div>
+    <h3>Was Pixa sich merkt</h3>
+    <ul class="log" id="log"><li class="small">Noch nichts. Fang an zu wischen.</li></ul>
+    <details>
+      <summary>Für Lehrpersonen und Studierende</summary>
+      <p><b>Das Modell.</b> Pixa wertet drei Signale aus: Gefällt mir (Gewicht ×2.2), schnelles Weiterwischen unter 1.5 Sekunden (×0.6) und langes Anschauen ab 4 Sekunden (×1.3). Ein Like auf eine Meinung schwächt zusätzlich die Gegenseite (×0.6). Die nächste Kategorie wird zufällig gezogen, gewichtet nach diesen Werten. 5 Prozent der Wahrscheinlichkeit verteilt Pixa gleichmässig auf alle Themen, damit ab und zu Neues auftaucht.</p>
+      <p><b>Die Zuspitzung.</b> Echte Plattformen nutzen weit mehr Signale, etwa Kommentare, Teilen, Folgen, Kontakte oder Tageszeit, und verfolgen eigene Ziele wie möglichst lange Nutzungszeit. Die App reduziert das bewusst, damit der Mechanismus in 20 Posts sichtbar wird.</p>
+      <p><b>Fachliche Einordnung.</b> Der Begriff Filterblase geht auf Eli Pariser (2011) zurück. Empirische Studien finden meist schwächere Effekte, als die These nahelegt: Viele Menschen nutzen mehrere Quellen, und die eigene Auswahl wirkt oft stärker als der Algorithmus. Die App ist deshalb ein Gedankenexperiment, kein Abbild der Wirklichkeit.</p>
+      <p><b>Fragen fürs Modul.</b> Welche Vereinfachungen trifft die App? Wo ist die Zuspitzung für Zyklus 2 hilfreich, wo könnte sie ein falsches Bild erzeugen? Wie würdet ihr das Blasen-Messer im Unterricht einsetzen?</p>
+    </details>
+  </aside>
+</div>
+
+<script>
+const TOPICS = {
+  tiere:{name:"Tiere", e:"🐾", g:["#FFB86B","#FF7A59"]},
+  sport:{name:"Sport", e:"⚽", g:["#5ED3A0","#1E9E7A"]},
+  gaming:{name:"Gaming", e:"🎮", g:["#8E7CFF","#4B3DD6"]},
+  musik:{name:"Musik", e:"🎵", g:["#FF8BC2","#D9488F"]},
+  kreativ:{name:"Basteln & Kunst", e:"🎨", g:["#FFE070","#F2A922"]},
+  weg:{name:"Gegen Hausaufgaben", e:"🚫", g:["#FF7A7A","#C9384C"], stance:true},
+  bleiben:{name:"Für Hausaufgaben", e:"📚", g:["#62BCFF","#2C6AD6"], stance:true}
+};
+const HOBBIES = ["tiere","sport","gaming","musik","kreativ"];
+const KEYS = Object.keys(TOPICS);
+const P = (t,h,e,c,s) => ({t,h,e,c,s});
+const POSTS = [
+  P("tiere","hundeliebe","🐶","Bello hat heute zum ersten Mal Pfötchen gegeben!"),
+  P("tiere","katzenwelt","🐱","Neues Katzenbett gekauft. Sie schläft lieber im Karton. 😹"),
+  P("tiere","kleintierfans","🐹","Unser Hamster stopft sich die Backen voll."),
+  P("tiere","stallgeschichten","🐴","Heute zum ersten Mal ohne Hilfe aufs Pony!"),
+  P("tiere","waldentdecker","🦔","Ein Igel im Garten! Bitte keine Milch geben, lieber Wasser."),
+  P("tiere","schildkroetenclub","🐢","Frieda ist 40 Jahre alt. Älter als Mama!"),
+  P("tiere","vogelpost","🦜","Unser Wellensittich sagt jetzt «Hallo»."),
+  P("tiere","hasenhaus","🐰","Kaninchen sind nicht gern allein. Darum wohnen hier zwei."),
+  P("sport","kickerkids","⚽","Fallrückzieher geübt. 37 Versuche, 1 Tor. 😅"),
+  P("sport","wasserratten","🏊","Neuer Rekord: 50 Meter Crawl!"),
+  P("sport","bikegang","🚴","Pumptrack-Runde nach der Schule."),
+  P("sport","pistenflitzer","⛷️","Erster Schnee! Wer kommt mit auf die Piste?"),
+  P("sport","korbjaeger","🏀","Drei Körbe hintereinander!"),
+  P("sport","turnpower","🤸","Endlich steht der Handstand."),
+  P("sport","eishockeyfans","🏒","Matchtag! Wer ist heute im Stadion?"),
+  P("sport","rollbrett","🛹","Mein erster Ollie. 🎉"),
+  P("gaming","levelup","🕹️","Endboss nach zwei Stunden besiegt!!!"),
+  P("gaming","pixelhelden","👾","Wer kennt dieses Retro-Spiel noch?"),
+  P("gaming","blockbauer","🧱","Meine Burg aus 10’000 Blöcken."),
+  P("gaming","rennprofi","🏎️","Neue Bestzeit auf der Regenbogenstrecke."),
+  P("gaming","knobelkids","🧩","Dieses Rätselspiel macht mich fertig. 🤯"),
+  P("gaming","turnierkids","🏆","Wir haben das Schulturnier gewonnen!"),
+  P("gaming","drachenquest","🐉","Endlich einen legendären Drachen gefunden!"),
+  P("gaming","koopmodus","🎮","Zu zweit macht’s doppelt Spass."),
+  P("musik","gitarrenstart","🎸","Mein erstes Lied auf der Gitarre."),
+  P("musik","trommelwirbel","🥁","Schlagzeug üben. Sorry, liebe Nachbarn. 😬"),
+  P("musik","singstars","🎤","Karaoke-Abend mit der ganzen Familie."),
+  P("musik","klavierklang","🎹","Endlich mit beiden Händen gespielt!"),
+  P("musik","neuehits","🎧","Dieser Song läuft bei mir in Dauerschleife."),
+  P("musik","tanzcrew","💃","Neue Choreo! Wer tanzt mit?"),
+  P("musik","musikschule","🎺","Konzert der Musikschule am Samstag."),
+  P("musik","geigenklang","🎻","Quietscht noch ein bisschen."),
+  P("kreativ","farbklecks","🌅","Mein Bild vom Sonnenuntergang."),
+  P("kreativ","bastelzeit","🏮","Laterne aus Papier gebastelt."),
+  P("kreativ","strickliesel","🧶","Mein erster Schal. Etwas schief, aber warm."),
+  P("kreativ","fotoblick","📸","Tautropfen am Morgen."),
+  P("kreativ","backstube","🧁","Cupcakes mit Einhornglasur."),
+  P("kreativ","legostadt","🏰","Eine ganze Stadt aus Lego."),
+  P("kreativ","comiczeichner","✏️","Mein eigener Superheld: Captain Tintenfisch."),
+  P("kreativ","gartenkids","🌻","Die Sonnenblume ist grösser als ich!"),
+  P("weg","schulfrei_jetzt","😩","Nach sechs Lektionen noch eine Stunde Hausaufgaben? Echt jetzt?! #HausaufgabenWeg","Echt jetzt?!"),
+  P("weg","mehrfreizeit","⏰","Ohne Hausaufgaben hätte ich endlich Zeit fürs Training. #HausaufgabenWeg","Mehr Freizeit!"),
+  P("weg","muede_max","😴","Wer ist auch so müde nach der Schule? Hausaufgaben abschaffen!","Zu müde"),
+  P("weg","familienzeit","🏡","Bei uns gibt es nur wegen Hausaufgaben Streit. Weg damit!","Weg damit!"),
+  P("weg","kinderstimme","📢","Kinder brauchen Pausen! Wer ist dabei? #HausaufgabenWeg","Wir brauchen Pausen"),
+  P("weg","fragemal","🤔","Manche Schulen haben keine Hausaufgaben mehr. Warum wir nicht?","Warum wir nicht?"),
+  P("weg","feierabend","🛋️","Schule ist mein Job. Nach dem Job ist frei! #HausaufgabenWeg","Feierabend!"),
+  P("weg","umfrage_kids","👎","Umfrage: Fast alle meine Follower wollen keine Hausaufgaben!","Alle sind dagegen!"),
+  P("bleiben","rechenprofi","✖️","Dank Üben zu Hause kann ich jetzt das Einmaleins! #HausaufgabenBleiben","Üben lohnt sich"),
+  P("bleiben","leseratte","📖","Lesen als Hausaufgabe? So habe ich mein Lieblingsbuch entdeckt!","Lieblingsbuch entdeckt"),
+  P("bleiben","dranbleiben","💪","Was man übt, das kann man. #HausaufgabenBleiben","Üben macht stark"),
+  P("bleiben","zuhause_lernen","🏠","Bei den Hausaufgaben sehen meine Eltern, was ich lerne.","Eltern sehen mit"),
+  P("bleiben","lerntipps","🧠","Zehn Minuten am Tag üben, dann bleibt’s im Kopf. #HausaufgabenBleiben","10 Minuten reichen"),
+  P("bleiben","musterschueler","🏅","Prüfung: eine 6! Weil ich zu Hause geübt habe.","Eine 6!"),
+  P("bleiben","lernteam","🤝","Hausaufgaben mit meiner Freundin machen = doppelt Spass.","Zusammen lernen"),
+  P("bleiben","umfrage_klasse","👍","Umfrage: Fast alle meine Follower finden Hausaufgaben wichtig!","Alle sind dafür!")
+].map((p,i)=>({...p,id:i}));
+
+const PERSONAS = [
+  {name:"Mila", e:"🦊", top:["tiere","kreativ"], stance:"bleiben"},
+  {name:"Leo", e:"🐻", top:["sport","gaming"], stance:"weg"},
+  {name:"Ana", e:"🦉", top:["musik","sport"], stance:"bleiben"},
+  {name:"Noah", e:"🐼", top:["gaming","tiere"], stance:"weg"},
+  {name:"Elif", e:"🐧", top:["musik","kreativ"], stance:"weg"}
+];
+
+const TOTAL = 20;
+const $ = id => document.getElementById(id);
+const view = $("view");
+let S;
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const grad = t => `linear-gradient(135deg, ${TOPICS[t].g[0]}, ${TOPICS[t].g[1]})`;
+
+function reset(){
+  S = {w:{}, seen:new Set(), hist:[], log:[], idx:0, cur:null, shownAt:0, busy:false, warm:shuffle(KEYS)};
+  KEYS.forEach(k=>S.w[k]=1);
+}
+function probs(explore=true){
+  const raw = KEYS.map(k=>Math.pow(S.w[k],1.4));
+  const sum = raw.reduce((a,b)=>a+b,0);
+  const o = {};
+  KEYS.forEach((k,i)=> o[k] = explore ? .95*raw[i]/sum + .05/KEYS.length : raw[i]/sum);
+  return o;
+}
+function bubble(){
+  const p = probs(false);
+  const H = -KEYS.reduce((a,k)=>a + (p[k]>0 ? p[k]*Math.log(p[k]) : 0),0);
+  return Math.max(0,Math.min(1,(1 - H/Math.log(KEYS.length))*1.7));
+}
+function unseen(t){return POSTS.filter(p=>p.t===t && !S.seen.has(p.id));}
+function nextPost(){
+  let t;
+  if(S.idx < S.warm.length) t = S.warm[S.idx];
+  else{
+    const p = probs(); let r = Math.random(), acc = 0;
+    for(const k of KEYS){acc += p[k]; if(r <= acc){t = k; break;}}
+    t = t || KEYS[KEYS.length-1];
+  }
+  let pool = unseen(t);
+  if(!pool.length){
+    const p = probs();
+    const alt = KEYS.filter(k=>unseen(k).length).sort((a,b)=>p[b]-p[a]);
+    pool = unseen(alt[0]);
+  }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function clampW(k){S.w[k] = Math.max(.05, Math.min(60, S.w[k]));}
+function addLog(txt){S.log.unshift(txt);}
+
+/* Screens */
+function intro(){
+  reset(); setBubble(); $("prog").style.width = "0";
+  view.innerHTML = `
+  <section class="intro">
+    <h1>Willkommen bei Pixa</h1>
+    <p>Pixa zeigt dir Bilder. Du entscheidest, was dir gefällt.</p>
+    <p>Tippe auf <b>♡ Gefällt mir</b>, wenn dir ein Bild gefällt. Tippe auf <b>Weiter</b>, wenn nicht. Du kannst auch nach links wischen oder doppelt aufs Bild tippen.</p>
+    <p>Schau dir ${TOTAL} Bilder an. Danach verrät dir Pixa etwas.</p>
+    <button class="cta" id="start">Los geht’s</button>
+    <p class="small">Pixa ist eine erfundene App für den Unterricht. Nichts wird gespeichert oder verschickt.</p>
+  </section>`;
+  $("start").onclick = showPost;
+  renderPanel();
+}
+function showPost(){
+  const p = nextPost(); S.cur = p; S.seen.add(p.id); S.busy = false;
+  $("prog").style.width = (S.idx/TOTAL*100) + "%";
+  const T = TOPICS[p.t];
+  view.innerHTML = `
+  <article class="post" aria-label="Post ${S.idx+1} von ${TOTAL}">
+    <header><span class="ava" style="background:${grad(p.t)}" aria-hidden="true">${p.e}</span><span class="handle">@${p.h}</span></header>
+    <div class="img ${p.s?'has-slogan':''}" id="img" style="background:${grad(p.t)}">
+      <span class="big" aria-hidden="true">${p.e}</span>
+      ${p.s?`<span class="slogan">${p.s}</span>`:""}
+      <span class="pop" id="pop" aria-hidden="true">❤️</span>
+    </div>
+    <div class="actions">
+      <button class="like" id="like" aria-pressed="false">♡ Gefällt mir</button>
+      <button id="next">Weiter</button>
+    </div>
+    <p class="cap"><b>${p.h}</b> ${p.c}</p>
+    <div class="count">Bild ${S.idx+1} von ${TOTAL}</div>
+  </article>`;
+  S.shownAt = performance.now();
+  $("like").onclick = () => act(true);
+  $("next").onclick = () => act(false);
+  const img = $("img"); let x0 = null, lastTap = 0;
+  img.addEventListener("touchstart", e => {x0 = e.touches[0].clientX;}, {passive:true});
+  img.addEventListener("touchend", e => {
+    if(x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if(dx < -60) act(false);
+  });
+  img.addEventListener("click", () => {const n = Date.now(); if(n - lastTap < 350) act(true); lastTap = n;});
+}
+function act(liked){
+  if(S.busy) return; S.busy = true;
+  const p = S.cur, T = TOPICS[p.t];
+  const dwell = (performance.now() - S.shownAt)/1000;
+  S.hist.push({id:p.id, t:p.t, liked, dwell});
+  if(liked){
+    S.w[p.t] *= 2.2; addLog(`❤️ ${T.name}: gefällt dir. Mehr davon!`);
+    if(T.stance){const o = p.t === "weg" ? "bleiben" : "weg"; S.w[o] *= .6; clampW(o); addLog(`⬇️ ${TOPICS[o].name}: zeigt Pixa dir jetzt seltener.`);}
+  } else if(dwell < 1.5){
+    S.w[p.t] *= .6; addLog(`👉 ${T.name}: schnell weitergewischt. Weniger davon.`);
+  } else {
+    S.w[p.t] *= .85; addLog(`➡️ ${T.name}: weitergewischt.`);
+  }
+  if(dwell >= 4){S.w[p.t] *= 1.3; addLog(`👀 ${T.name}: ${Math.round(dwell)} Sekunden angeschaut. Interessiert dich wohl.`);}
+  clampW(p.t);
+  S.idx++; setBubble(); renderPanel();
+  const go = () => S.idx >= TOTAL ? reveal() : showPost();
+  if(liked){
+    $("like").setAttribute("aria-pressed","true"); $("like").textContent = "♥ Gefällt mir";
+    const pop = $("pop"); pop.classList.remove("go"); void pop.offsetWidth; pop.classList.add("go");
+    setTimeout(go, matchMedia("(prefers-reduced-motion: reduce)").matches ? 150 : 520);
+  } else go();
+}
+
+function hobbyShares(){
+  const p = probs(false); const s = HOBBIES.reduce((a,k)=>a+p[k],0); const o = {};
+  HOBBIES.forEach(k=>o[k] = p[k]/s); return o;
+}
+function userStance(){
+  const r = S.w.weg / S.w.bleiben;
+  return r > 1.6 ? "weg" : r < 1/1.6 ? "bleiben" : null;
+}
+function allocate(n){
+  const p = probs(false);
+  const base = KEYS.map(k=>({k, x:p[k]*n}));
+  base.forEach(b=>{b.c = Math.floor(b.x); b.r = b.x - b.c;});
+  let left = n - base.reduce((a,b)=>a+b.c,0);
+  base.sort((a,b)=>b.r-a.r).forEach(b=>{if(left>0){b.c++; left--;}});
+  const out = [];
+  base.forEach(b=>{const pool = shuffle(POSTS.filter(q=>q.t===b.k)); for(let i=0;i<b.c;i++) out.push(pool[i % pool.length]);});
+  return shuffle(out);
+}
+const tile = p => `<div class="tile" style="background:${grad(p.t)}" title="${TOPICS[p.t].name}">${p.e}</div>`;
+const names = arr => arr.length > 1 ? arr.slice(0,-1).join(", ") + " und " + arr[arr.length-1] : arr[0];
+
+function reveal(){
+  $("prog").style.width = "100%";
+  const sh = hobbyShares();
+  const top = [...HOBBIES].sort((a,b)=>sh[b]-sh[a]).slice(0,3);
+  const st = userStance();
+  const first = S.hist.slice(0,7).map(h=>POSTS[h.id]);
+  S.now = allocate(9);
+  const likes = S.hist.filter(h=>h.liked).length;
+  const skips = S.hist.length - likes;
+  const long = S.hist.filter(h=>h.dwell >= 4).length;
+  const stTxt = st ? `Pixa glaubt: Du findest, <b>${st === "weg" ? "Hausaufgaben sollten abgeschafft werden" : "Hausaufgaben sind wichtig"}</b>. Darum zeigt dir Pixa fast nur noch Posts, die das auch finden.`
+                   : `Pixa weiss noch nicht, was du über Hausaufgaben denkst. Darum zeigt dir Pixa noch beide Seiten.`;
+  view.innerHTML = `
+  <section class="screen result">
+    <h2>Das denkt Pixa über dich</h2>
+    <p>Aus deinen ${TOTAL} Entscheidungen hat Pixa ein Profil gebaut.</p>
+    <h3>Deine Interessen</h3>
+    ${top.map(k=>`<div class="meter"><span>${TOPICS[k].e} ${TOPICS[k].name}</span><div class="track"><div class="fill" style="width:${Math.round(sh[k]*100)}%;background:${grad(k)}"></div></div><span>${Math.round(sh[k]*100)} %</span></div>`).join("")}
+    <h3>Deine Meinung</h3>
+    <div class="stance">${stTxt}</div>
+    <h3>So hat sich dein Feed verändert</h3>
+    <p class="small">Am Anfang</p>
+    <div class="strip">${first.map(tile).join("")}</div>
+    <p class="small">Jetzt</p>
+    <div class="strip">${S.now.slice(0,7).map(tile).join("")}</div>
+    <h3>Woher weiss Pixa das?</h3>
+    <p>Du hast ${likes} Bilder mit ♡ markiert und ${skips} weitergewischt. Bei ${long} Bildern hast du länger hingeschaut. Auch das merkt sich Pixa, ohne dass du etwas tippst.</p>
+    <div class="stack"><button class="cta" id="toCompare">Vergleiche deinen Feed</button></div>
+  </section>`;
+  $("toCompare").onclick = compare;
+  view.scrollIntoView({block:"start"});
+}
+
+function compare(){
+  const sh = hobbyShares();
+  const top2 = [...HOBBIES].sort((a,b)=>sh[b]-sh[a]).slice(0,2);
+  const st = userStance();
+  const score = ps => ps.top.filter(t=>top2.includes(t)).length*2 + (st && st === ps.stance ? 3 : 0);
+  const ps = [...PERSONAS].sort((a,b)=>score(a)-score(b))[0];
+  const pick = (t,n,off=0) => POSTS.filter(p=>p.t===t).slice(off, off+n);
+  const pf = shuffle([...pick(ps.top[0],4), ...pick(ps.top[1],3), ...pick(ps.stance,2)]);
+  const missing = ps.top.filter(t=>sh[t] < .18).map(t=>TOPICS[t].name);
+  const other = ps.stance === "weg" ? "bleiben" : "weg";
+  let stTxt;
+  if(st && st !== ps.stance) stTxt = `${ps.name} sieht fast nur Posts <b>${ps.stance === "weg" ? "gegen" : "für"}</b> Hausaufgaben. Du siehst fast nur Posts <b>${st === "weg" ? "gegen" : "für"}</b> Hausaufgaben. Wenn ihr zwei darüber diskutiert, kennt jedes nur eine Seite.`;
+  else if(st) stTxt = `${ps.name} und du seht beide vor allem Posts <b>${st === "weg" ? "gegen" : "für"}</b> Hausaufgaben. Die anderen Argumente bekommt ihr beide kaum noch zu sehen.`;
+  else stTxt = `${ps.name} sieht fast nur Posts <b>${ps.stance === "weg" ? "gegen" : "für"}</b> Hausaufgaben. Bei dir ist Pixa noch unsicher. Was passiert wohl, wenn du ein paar dieser Posts likest?`;
+  const theirs = pick(ps.stance,2,2);
+  const yours = st ? pick(st,2,4) : [pick("weg",1,4)[0], pick("bleiben",1,4)[0]];
+  view.innerHTML = `
+  <section class="screen result">
+    <h2>Dein Feed und ${ps.name}s Feed</h2>
+    <p>${ps.name} benutzt auch Pixa. So sehen eure Feeds gerade aus.</p>
+    <div class="duo">
+      <div><h3>🙂 Du</h3><div class="grid">${S.now.map(tile).join("")}</div></div>
+      <div><h3>${ps.e} ${ps.name}</h3><div class="grid">${pf.map(tile).join("")}</div></div>
+    </div>
+    <h3>Was ist anders?</h3>
+    <p>${missing.length ? `Bei ${ps.name} kommen vor allem ${names(missing)} vor. In deinem Feed tauchen sie kaum auf.` : `Ihr habt ähnliche Interessen. Trotzdem sieht ${ps.name} anderes als du.`}</p>
+    <div class="stance">${stTxt}</div>
+    <h3>Das liest ${ps.name} zum Thema Hausaufgaben</h3>
+    ${theirs.map(q=>`<div class="quote"><b>@${q.h}</b>${q.c}</div>`).join("")}
+    <h3>Das liest du</h3>
+    ${yours.map(q=>`<div class="quote"><b>@${q.h}</b>${q.c}</div>`).join("")}
+    <div class="stack"><button class="cta" id="toTalk">Darüber reden</button></div>
+  </section>`;
+  $("toTalk").onclick = () => talk(ps);
+  view.scrollIntoView({block:"start"});
+}
+
+function talk(ps){
+  view.innerHTML = `
+  <section class="screen result">
+    <h2>Lass uns darüber reden</h2>
+    <p>Besprecht diese Fragen zu zweit oder in der Klasse.</p>
+    <ul class="qs">
+      <li>Hast du beim Wischen gemerkt, dass sich dein Feed verändert? Wann?</li>
+      <li>Stimmt das Profil, das Pixa über dich gebaut hat? Was weiss Pixa nicht über dich?</li>
+      <li>Was verpasst du, weil Pixa es dir nicht mehr zeigt?</li>
+      <li>Du und ${ps.name} streitet über Hausaufgaben. Warum könnte das schwierig werden?</li>
+      <li>Was kannst du tun, damit du in deinem Feed Verschiedenes siehst?</li>
+    </ul>
+    <h3>Experiment</h3>
+    <p>Spiel nochmals und like diesmal ganz andere Dinge. Wie schnell dreht sich dein Feed? Schau dabei «Hinter die Kulissen».</p>
+    <div class="stack"><button class="cta" id="again">Nochmals spielen</button></div>
+  </section>`;
+  $("again").onclick = intro;
+  view.scrollIntoView({block:"start"});
+}
+
+/* Panel */
+function setBubble(){$("phone").style.setProperty("--b", bubble().toFixed(2));}
+function renderPanel(){
+  const p = probs(); const b = bubble();
+  $("chances").innerHTML = KEYS.map(k=>`<div class="chance"><span>${TOPICS[k].e} ${TOPICS[k].name}</span><div class="track"><div class="fill" style="width:${(p[k]*100).toFixed(0)}%;background:${grad(k)}"></div></div><span>${Math.round(p[k]*100)} %</span></div>`).join("");
+  $("bubbleFill").style.width = Math.round(b*100) + "%";
+  $("bubbleVal").textContent = Math.round(b*100) + " %";
+  $("log").innerHTML = S.log.length ? S.log.slice(0,30).map(l=>`<li>${l}</li>`).join("") : `<li class="small">Noch nichts. Fang an zu wischen.</li>`;
+}
+function togglePanel(open){
+  const panel = $("panel"), wide = matchMedia("(min-width:900px)").matches;
+  if(open === undefined) open = wide ? panel.classList.contains("hidden") : !panel.classList.contains("open");
+  panel.classList.toggle("hidden", !open);
+  panel.classList.toggle("open", open);
+  $("scrim").classList.toggle("open", open && !wide);
+  $("peekBtn").setAttribute("aria-expanded", String(open));
+  if(open && !wide) $("closeBtn").focus();
+}
+$("peekBtn").onclick = () => togglePanel();
+$("closeBtn").onclick = () => {togglePanel(false); $("peekBtn").focus();};
+$("scrim").onclick = () => togglePanel(false);
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && $("panel").classList.contains("open")) togglePanel(false);
+  if(!$("like") || S.busy || e.target.closest("button,summary")) return;
+  if(e.key === "ArrowRight") act(false);
+  if(e.key.toLowerCase() === "l") act(true);
+});
+
+intro();
+</script>
+</body>
+</html>
